@@ -91,6 +91,11 @@ def osxphoto_to_row(sha256, photo):
         "uti_raw": photo.uti_raw,
         "path_raw": photo.path_raw,
     }
+
+    for key, value in row.items():
+        if isinstance(value, pathlib.PosixPath):
+            row[key] = value.as_posix()
+
     # Now add place keys
     place = photo.place
     if place is not None:
@@ -130,7 +135,6 @@ def osxphoto_to_score_row(photo):
         "ZWELLFRAMEDSUBJECTSCORE": score.well_framed_subject,
         "ZWELLTIMEDSHOTSCORE": score.well_timed_shot,
     }
-
 
 def to_utc_isoformat(dt):
     if not dt:

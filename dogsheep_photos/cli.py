@@ -236,7 +236,7 @@ def apple_photos(db_path, library, image_url_prefix, image_url_suffix):
         ZWELLFRAMEDSUBJECTSCORE REAL,
         ZWELLTIMEDSHOTSCORE REAL
         );
-        """
+    """
     )
     db["apple_photos_scores"].create_index(["ZUUID"])
 
@@ -248,16 +248,28 @@ def apple_photos(db_path, library, image_url_prefix, image_url_suffix):
             if rows:
                 sha256 = rows[0]["sha256"]
             else:
+                should_calculate_hash = True
                 if photo.ismissing:
                     print("Missing: {}".format(photo))
-                    continue
-                sha256 = calculate_hash(pathlib.Path(photo.path))
+                    skipped.append(photo)
+                    should_calculate_hash = False
+                if photo.path is None:
+                    print("No path for: {}".format(photo))
+                    skipped.append(photo)
+                    should_calculate_hash = False
+
+                if should_calculate_hash:
+                    sha256 = calculate_hash(pathlib.Path(photo.path))
+                else:
+                    sha256 = None
             photo_row = osxphoto_to_row(sha256, photo)
+
             db["apple_photos"].insert(
                 photo_row, pk="uuid", replace=True, alter=True,
             )
             score_row = osxphoto_to_score_row(photo)
-            db["apple_photos_scores"].insert(score_row, pk="ZUUID", replace=True, alter=True
+            db["apple_photos_scores"].insert(
+                score_row, pk="ZUUID", replace=True, alter=True,
             )
     # Ensure indexes
     for column in ("date", "sha256"):
